@@ -162,7 +162,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 }
                 return;
               }
-              await chatService.addContact(user['uid']);
+              await chatService.addContact(
+                user['uid'],
+                otherDisplayName: user['displayName'],
+                otherUsername: user['username'],
+              );
               if (context.mounted) {
                 Navigator.pop(context);
                 Navigator.push(
