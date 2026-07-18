@@ -35,13 +35,11 @@ class ChatService {
   }) async {
     final chatId = chatIdFor(otherUid);
     final chatRef = _db.collection('chats').doc(chatId);
-
     await chatRef.set({
       'participants': [myUid, otherUid],
       'lastMessage': text,
       'lastMessageAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
-
     await chatRef.collection('messages').add({
       'senderId': myUid,
       'text': text,
@@ -57,13 +55,45 @@ class ChatService {
         .limit(1)
         .get();
     if (query.docs.isEmpty) return null;
-    return query.docs.first.data();
+    final data = query.docs.first.data();
+    // uid alanı belgede yoksa, belge id'sini uid olarak ekleyelim.
+    data['uid'] ??= query.docs.first.id;
+    return data;
   }
 
-  Future<void> addContact(String otherUid) async {
+  /// Kişiyi tam bir "rehber kaydı" gibi ekler: isim, kullanıcı adı ve UID
+  /// doğrudan kişinin kendi kaydının içine gömülür. Böylece daha sonra
+  /// listelerken tekrar tekrar `getUser()` ile Firestore'a gitmeye gerek kalmaz.
+  /// İki taraf da birbirini karşılıklı olarak rehberine ekler ki her iki
+  /// kullanıcı da sohbeti kendi kişi listesinde görsün.
+  Future<void> addContact(String otherUid, {String? otherDisplayName, String? otherUsername}) async {
+    // Eğer isim/kullanıcı adı verilmediyse, Firestore'dan çekelim.
+    String displayName = otherDisplayName ?? '';
+    String username = otherUsername ?? '';
+    if (displayName.isEmpty || username.isEmpty) {
+      final otherDoc = await _db.collection('users').doc(otherUid).get();
+      final data = otherDoc.data();
+      displayName = data?['displayName'] ?? displayName;
+      username = data?['username'] ?? username;
+    }
+
+    // Kendi rehberime ekle.
     await _db.collection('users').doc(myUid).collection('contacts').doc(otherUid).set({
+      'uid': otherUid,
+      'displayName': displayName,
+      'username': username,
       'addedAt': FieldValue.serverTimestamp(),
-    });
+    }, SetOptions(merge: true));
+
+    // Karşılıklı olsun diye, karşı tarafın rehberine de kendimi ekleyelim.
+    final myDoc = await _db.collection('users').doc(myUid).get();
+    final myData = myDoc.data();
+    await _db.collection('users').doc(otherUid).collection('contacts').doc(myUid).set({
+      'uid': myUid,
+      'displayName': myData?['displayName'] ?? '',
+      'username': myData?['username'] ?? '',
+      'addedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 
   Stream<QuerySnapshot<Map<String, dynamic>>> myContactsStream() {
