@@ -1,14 +1,13 @@
 {
-  "_YORUM": "BU DOSYAYI DEĞİŞTİR: Firebase Console → Proje Ayarları → Android uygulaman → 'google-services.json indir' butonuna tıkla ve indirdiğin dosyanın TÜM içeriğiyle bu dosyanın içeriğini değiştir. Bu sadece yapıyı göstermek için sahte bir örnektir, gerçek bir Firebase projesine ait değildir.",
   "project_info": {
-    "project_number": "000000000000",
-    "project_id": "BURAYA_PROJE_ID_YAZ",
-    "storage_bucket": "BURAYA_PROJE_ID.appspot.com"
+    "project_number": "282977545553",
+    "project_id": "aile-cell",
+    "storage_bucket": "aile-cell.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:000000000000:android:0000000000000000000000",
+        "mobilesdk_app_id": "1:282977545553:android:89cd4f6da301f8e9437770",
         "android_client_info": {
           "package_name": "com.ailecell.app"
         }
@@ -16,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "BURAYA_API_KEY_YAZ"
+          "current_key": "AIzaSyC8sABGwZ2sQO42u7LHOMZhHVTHWun2h94"
         }
       ],
       "services": {
