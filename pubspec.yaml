@@ -1,0 +1,49 @@
+name: aile_cell
+description: Aile Cell - ücretsiz mesajlaşma, sesli ve görüntülü arama uygulaması
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.6
+
+  # Firebase
+  firebase_core: ^2.32.0
+  firebase_auth: ^4.20.0
+  cloud_firestore: ^4.17.5
+
+  # Sesli arama (WebRTC)
+  flutter_webrtc: ^0.11.5
+
+  # Durum yönetimi
+  provider: ^6.1.2
+
+  # Yardımcılar
+  intl: ^0.19.0
+  uuid: ^4.4.0
+  permission_handler: ^11.3.1
+  shared_preferences: ^2.2.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/logo.png
+
+# Uygulama simgesini (logo.png) otomatik olarak Android ikon boyutlarına
+# üretmek için: `flutter pub run flutter_launcher_icons`
+flutter_launcher_icons:
+  android: true
+  image_path: "assets/logo.png"
+  min_sdk_android: 23
+  adaptive_icon_background: "#4A148C"
+  adaptive_icon_foreground: "assets/logo.png"
