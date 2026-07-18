@@ -5,14 +5,76 @@ import '../services/auth_service.dart';
 import '../services/chat_service.dart';
 import '../main.dart' show kAccentPurple;
 import 'chat_screen.dart';
+import 'call_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final _chatService = ChatService();
+  final Set<String> _handledCallIds = {};
+  bool _inCall = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _listenIncomingCalls();
+  }
+
+  /// Firestore'daki "calls" koleksiyonunu dinler; bana ait (calleeId == myUid)
+  /// ve durumu "ringing" olan yeni bir kayıt görürse, otomatik olarak
+  /// CallScreen'i (isCaller: false) açar.
+  void _listenIncomingCalls() {
+    final myUid = _chatService.myUid;
+    FirebaseFirestore.instance
+        .collection('calls')
+        .where('calleeId', isEqualTo: myUid)
+        .where('status', isEqualTo: 'ringing')
+        .snapshots()
+        .listen((snapshot) async {
+      for (var change in snapshot.docChanges) {
+        if (change.type != DocumentChangeType.added) continue;
+        final doc = change.doc;
+        final callId = doc.id;
+        if (_handledCallIds.contains(callId)) continue;
+        if (_inCall) continue; // zaten bir görüşmedeyiz, ikinci aramayı yoksay
+        _handledCallIds.add(callId);
+
+        final data = doc.data();
+        if (data == null) continue;
+        final callerId = data['callerId'] as String?;
+        final isVideo = data['isVideo'] == true;
+        if (callerId == null) continue;
+
+        final callerDoc = await _chatService.getUser(callerId);
+        final callerName = callerDoc.data()?['displayName'] ?? 'Bilinmeyen';
+
+        if (!mounted) return;
+        _inCall = true;
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => CallScreen(
+              otherUid: callerId,
+              otherName: callerName,
+              isCaller: false,
+              isVideoCall: isVideo,
+              incomingCallId: callId,
+            ),
+          ),
+        );
+        _inCall = false;
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final chatService = ChatService();
-    final myUid = chatService.myUid;
+    final myUid = _chatService.myUid;
 
     return Scaffold(
       appBar: AppBar(
@@ -20,7 +82,7 @@ class HomeScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.person_add),
-            onPressed: () => _showAddContactDialog(context, chatService),
+            onPressed: () => _showAddContactDialog(context, _chatService),
           ),
           IconButton(
             icon: const Icon(Icons.logout),
@@ -29,7 +91,7 @@ class HomeScreen extends StatelessWidget {
         ],
       ),
       body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-        stream: chatService.myChatsStream(),
+        stream: _chatService.myChatsStream(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -46,7 +108,7 @@ class HomeScreen extends StatelessWidget {
               final otherUid = participants.firstWhere((id) => id != myUid);
 
               return FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-                future: chatService.getUser(otherUid),
+                future: _chatService.getUser(otherUid),
                 builder: (context, userSnap) {
                   final otherName = userSnap.data?.data()?['displayName'] ?? '...';
                   return ListTile(
